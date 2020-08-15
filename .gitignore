@@ -266,5 +266,5 @@ $RECYCLE.BIN/
 
 
 # 용량 제한
-.html
+*.html
 lda_output/
