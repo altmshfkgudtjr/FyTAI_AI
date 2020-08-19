@@ -14,7 +14,7 @@ from datetime import datetime
 WORKERS = 4 			# CPU 갯수
 NUM_TOPICS = 10	 		# 토픽 갯수
 PASSES = 30				# 전체 코퍼스에서 모델을 학습시키는 빈도를 제어
-ITERATION = 70			# 각각 문서에 대해서 루프를 얼마나 돌리는지를 제어
+ITERATION = 100			# 각각 문서에 대해서 루프를 얼마나 돌리는지를 제어
 MIN_COUNT = 10 			# 등장 빈도수 및 길이로 딕셔너리 필터링
 IS_REPLY = True			# 대댓글 포함
 ''' ============== '''
@@ -173,7 +173,7 @@ def visualization(ldamodel, corpus, dictionary, name=""):
 #==============================================================================
 
 # Logging 함수
-def logging(coherence, perflexity, filename="learning_log.log", num_topcis=NUM_TOPICS, passes=PASSES, interations=ITERATION):
+def logging(coherence, perflexity, filename="learning_log.log", num_topics=NUM_TOPICS, passes=PASSES, interations=ITERATION):
 	with open(filename, "a", encoding="UTF8") as f:
 		f.write("**** LDA model ****\n")
 		f.write(":::: Date: ", datetime.strftime(datetime.now(), "%Y-%m-%d %H:%M:%S"), "\n")
@@ -220,12 +220,17 @@ def LDA_repeat():
 		corpus, dictionary = make_cor_dict(tf_idf=True)
 		save_dict_corpus(dictionary=dictionary, corpus=corpus)
 
-	TOPIC_MIN = 3
-	TOPIC_MAX = 30
-	for i in range(TOPIC_MIN, TOPIC_MAX):
-		ldamodel, cohorence, perflexity =  learn_lda(
-												corpus = corpus, 
-												dictionary = dictionary
-											)
-		# 로깅
-		logging(coherence=coherence, perflexity=perflexity, num_topcis=i)
+	passes = [10,30,50]
+	num_topics = [3,10,30]
+
+	for passes_value in passes:
+		for topics_value in num_topics:
+			ldamodel, cohorence, perflexity =  learn_lda(
+													corpus=corpus, 
+													dictionary=dictionary,
+													passes=passes_value,
+													num_topics=topics_value,
+													iterations=100
+												)
+			#로깅
+			logging(coherence=coherence, perflexity=perflexity, num_topics=i)
