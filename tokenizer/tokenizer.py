@@ -62,7 +62,7 @@ def tf_idf(token, doc, docs):
 	return tf(token, doc) * idf(token, docs)
 
 # TF-IDF를 이용한 불용어 추출기
-def stopword_checker(n=20000):
+def stopword_checker(n=10000):
 	print("< 불용어일 수도 있는 Token들 추출 >\n\n")
 
 	# DB 가져오기
@@ -133,6 +133,7 @@ def stopword_checker(n=20000):
 
 	# tf_idf 값으로 오름차순 정렬
 	output = sorted(tfidf_list, key=lambda x: x['tf_idf'])
+	output.reverse()
 
 	print("총 토큰 수:", len(output))
 	print(":::: Token", n, "개 추출 중...")
@@ -269,7 +270,7 @@ def Tokenizer_DB():
 			
 			for reply in replies:
 				result = get_korean(reply['content'])
-				result =  parse_tags(mecab, result)
+				result = parse_tags(mecab, result)
 
 				tokens = []
 
@@ -280,7 +281,7 @@ def Tokenizer_DB():
 				reply['tokens'] = tokens
 
 			result = get_korean(comment['content'])
-			result =  parse_tags(mecab, result)
+			result = parse_tags(mecab, result)
 
 			tokens = []
 
@@ -290,13 +291,33 @@ def Tokenizer_DB():
 
 			comment['tokens'] = tokens
 
+		video_tokens = []
+
+		if 'tags' in video:
+			for token in video['tags']:
+				result = get_korean(token)
+				result = parse_tags(mecab, result)
+				video_tokens += result
+		else:
+			db.video.update_one(
+				{
+					"_id": ObjectId(video['_id'])
+				},
+				{
+					"$set": {
+						'tags': []
+					}
+				}
+			)
+
 		db.video.update_one(
 			{
 				"_id": ObjectId(video['_id'])
 			}, 
 			{
 				'$set': {
-					'comments': comments
+					'comments': comments,
+					'tokens': video_tokens
 				}
 			}
 		)
