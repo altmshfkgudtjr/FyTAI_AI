@@ -12,10 +12,10 @@ from datetime import datetime
 
 ''' HyperParameter '''
 WORKERS = 4 			# CPU 갯수
-NUM_TOPICS = 10	 		# 토픽 갯수
+NUM_TOPICS = 6	 		# 토픽 갯수
 PASSES = 30				# 전체 코퍼스에서 모델을 학습시키는 빈도를 제어
 ITERATION = 100			# 각각 문서에 대해서 루프를 얼마나 돌리는지를 제어
-MIN_COUNT = 10 			# 등장 빈도수 및 길이로 딕셔너리 필터링
+MIN_COUNT = 20 			# 등장 빈도수 및 길이로 딕셔너리 필터링
 IS_REPLY = True			# 대댓글 포함
 ''' ============== '''
 
@@ -56,6 +56,7 @@ def load_model(model_path=save_model_path, dict_path=save_dict_path, version=Non
 	except:
 		print("\nmodel is not exist.\n")
 		return None, None
+
 	return dictionary, corpus
 	# return lda, dictionary, corpus
 
@@ -143,6 +144,7 @@ def make_cor_dict(tf_idf=True, is_reply=IS_REPLY):
 def learn_lda(corpus=None, dictionary=None, num_topics = NUM_TOPICS, passes = PASSES, 
 				iterations = ITERATION):
 	print("\nLDA Training...\n")
+
 	ldamodel = LdaMulticore(
 					corpus,
 					num_topics = num_topics,
@@ -152,8 +154,8 @@ def learn_lda(corpus=None, dictionary=None, num_topics = NUM_TOPICS, passes = PA
 					iterations = iterations
 				)
 	print("\nLDA Training Done!\n")
-
 	print("\nCoherence | Perplexity computing...\n")
+
 	cm = CoherenceModel(model=ldamodel, corpus=corpus, coherence='u_mass')
 	coherence = cm.get_coherence()
 	perplexity = ldamodel.log_perplexity(corpus)
@@ -173,17 +175,17 @@ def visualization(ldamodel, corpus, dictionary, name=""):
 #==============================================================================
 
 # Logging 함수
-def logging(coherence, perflexity, filename="learning_log.log", num_topics=NUM_TOPICS, passes=PASSES, interations=ITERATION):
-	with open(filename, "a", encoding="UTF8") as f:
+def logging(coherence, perflexity, num_topics=NUM_TOPICS, passes=PASSES, interations=ITERATION):
+	with open("learning_log.log", "a", encoding="UTF8") as f:
 		f.write("**** LDA model ****\n")
-		f.write(":::: Date: ", datetime.strftime(datetime.now(), "%Y-%m-%d %H:%M:%S"), "\n")
-		f.write(":::: Hyper Parameter\n")
-		f.write("- NUM_TOPICS:", num_topcis, "\n")
-		f.write("- PASSES:", passes, "\n")
-		f.write("- ITERATION:", interations, "\n")
-		f.write(":::: Score\n")
-		f.write("- Coherence:", coherence)
-		f.write("- Perflexity:", perflexity)
+		f.write("- Date: "+datetime.strftime(datetime.now(), "%Y-%m-%d %H:%M:%S")+"\n")
+		f.write("< Hyper Parameter >\n")
+		f.write("- NUM_TOPICS: "+str(num_topcis)+"\n")
+		f.write("- PASSES: "+str(passes)+"\n")
+		f.write("- ITERATION: "+str(interations)+"\n")
+		f.write("< Score >\n")
+		f.write("- Coherence: "+str(coherence))
+		f.write("- Perflexity: "+str(perflexity))
 		f.write("\n\n\n")
 
 #==============================================================================
@@ -197,11 +199,11 @@ def LDA():
 		corpus, dictionary = make_cor_dict(tf_idf=True)
 		save_dict_corpus(dictionary=dictionary, corpus=corpus)
 
-	ldamodel, cohorence, perflexity =  learn_lda(
+	ldamodel, coherence, perflexity =  learn_lda(
 											corpus = corpus, 
 											dictionary = dictionary
 										)
-	print("cohorence:",cohorence)
+	print("coherence:",coherence)
 	print("perflexity:",perflexity)
 
 	# 모델 저장
@@ -212,25 +214,27 @@ def LDA():
 
 # LDA 모델 반복 생성 함수
 def LDA_repeat():
+	# Hyper Parameter
+	#===========================
+	passes = [10,30,50]
+	num_topics = [3,10,30]
+	#===========================
+
 	dictionary, corpus = load_model()
 	
-	# 없을 경우	
+	# 모델이 없을 경우	
 	if dictionary == None or corpus == None:
 		print("Dictionary와 Corpus가 존재하지 않습니다.\n")
 		corpus, dictionary = make_cor_dict(tf_idf=True)
 		save_dict_corpus(dictionary=dictionary, corpus=corpus)
 
-	passes = [10,30,50]
-	num_topics = [3,10,30]
-
 	for passes_value in passes:
 		for topics_value in num_topics:
-			ldamodel, cohorence, perflexity =  learn_lda(
+			ldamodel, coherence, perflexity =  learn_lda(
 													corpus=corpus, 
 													dictionary=dictionary,
 													passes=passes_value,
 													num_topics=topics_value,
 													iterations=100
 												)
-			#로깅
 			logging(coherence=coherence, perflexity=perflexity, num_topics=i)
