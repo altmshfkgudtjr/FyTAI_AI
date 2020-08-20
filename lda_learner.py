@@ -175,14 +175,14 @@ def visualization(ldamodel, corpus, dictionary, name=""):
 #==============================================================================
 
 # Logging 함수
-def logging(coherence, perflexity, num_topics=NUM_TOPICS, passes=PASSES, interations=ITERATION):
+def logging(coherence, perflexity, num_topics=NUM_TOPICS, passes=PASSES, iterations=ITERATION):
 	with open("learning_log.log", "a", encoding="UTF8") as f:
 		f.write("**** LDA model ****\n")
 		f.write("- Date: "+datetime.strftime(datetime.now(), "%Y-%m-%d %H:%M:%S")+"\n")
 		f.write("< Hyper Parameter >\n")
 		f.write("- NUM_TOPICS: "+str(num_topcis)+"\n")
 		f.write("- PASSES: "+str(passes)+"\n")
-		f.write("- ITERATION: "+str(interations)+"\n")
+		f.write("- ITERATION: "+str(iterations)+"\n")
 		f.write("< Score >\n")
 		f.write("- Coherence: "+str(coherence))
 		f.write("- Perflexity: "+str(perflexity))
