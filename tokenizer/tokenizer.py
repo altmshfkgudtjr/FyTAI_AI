@@ -4,6 +4,7 @@ import re
 import math
 from bson.objectid import ObjectId
 from tqdm import tqdm
+from except_nouns import except_nouns
 
 # 한글 Regex
 REG = re.compile('[^ 가-힣]+')
@@ -45,6 +46,20 @@ def parse_tags(model, text):
 		if tag in TAGS:
 			output.append(token)
 	return output
+
+# 잘못된 Token 수정
+def except_token(tokens):
+	for ex_noun in except_nouns:
+		ch = 0
+		items = ex_noun.values()
+		for item in list(items)[0]:
+			if item in tokens:
+				ch += 1
+		if ch == len(list(items)[0]):
+			for item in list(items)[0]:
+				tokens.remove(item)
+			tokens.append(list(ex_noun.keys())[0])
+	return tokens
 
 # TF
 def tf(token, doc):
@@ -98,6 +113,12 @@ def stopword_checker(n=10000):
 		output = parse_tags(mecab, comment)
 		docs.append(output)
 
+	# 잘못된 Token 수정
+	for doc in docs:
+		filtered = []
+		filtered = except_token(doc)
+		doc = filtered
+
 	# 불용어 파일 읽어오기
 	print(":::: 불용어 처리 중...\n")
 	with open('korean_stopwords.txt', 'r', encoding='UTF8') as f:
@@ -140,104 +161,9 @@ def stopword_checker(n=10000):
 	with open('check_please.txt', 'w', encoding='UTF8') as f:
 		for token in output[:n]:
 			f.write(token['token']+'\n')
+
+	return True
 			
-
-# 댓글만 포함
-def Tokenizer_1(start=0, end=-1):
-	# DB 가져오기
-	client, db = get_db()
-
-	# 영상정보 가져오기
-	videos = get_videos(db)
-
-	comment_list = []
-
-	# Koren 댓글만 잘라서 모으기
-	for video in videos[start:end]:
-		comments = video['comments']
-		
-		for comment in comments:
-			result = get_korean(comment['content'])
-			comment_list.append(result)
-
-	tokens = []
-
-	# MeCab 모델 선언
-	mecab = MeCab.Tagger()
-
-	# Mecab 형태소 분석
-	for comment in comment_list:
-		output = parse_tags(mecab, comment)
-		tokens += output
-
-	# 불용어 파일 읽어오기
-	with open('korean_stopwords.txt', 'r', encoding='UTF8') as f:
-		stopwords = f.read().split()
-
-	tokens_filterd = []
-
-	for token in tokens:
-		if token not in stopwords:
-			tokens_filterd.append(token)
-
-	print(":::: 대댓글 미포함 ::::")
-	print('토큰 갯수:', len(list(set(tokens))))
-	print('불용어 처리 토큰 갯수:', len(list(set(tokens_filterd))))
-	print('\n', list(set(tokens))[:100])
-
-	close_db(client)
-
-
-# 대댓글 포함
-def Tokenizer_2(start=0, end=-1):
-	# DB 가져오기
-	client, db = get_db()
-
-	# 영상정보 가져오기
-	videos = get_videos(db)
-
-	comment_list = []
-
-	# Koren 댓글만 잘라서 모으기
-	for video in videos[start:end]:
-		comments = video['comments']
-		
-		for comment in comments:
-			replies = comment['replies']
-			
-			for reply in replies:
-				result = get_korean(reply['content'])
-				comment_list.append(result)
-		
-			result = get_korean(comment['content'])
-			comment_list.append(result)
-
-	tokens = []
-
-	# MeCab 모델 선언
-	mecab = MeCab.Tagger()
-
-	# Mecab 형태소 분석
-	for comment in comment_list:
-		output = parse_tags(mecab, comment)
-		tokens += output
-
-	# 불용어 파일 읽어오기
-	with open('korean_stopwords.txt', 'r', encoding='UTF8') as f:
-		stopwords = f.read().split()
-
-	tokens_filterd = []
-
-	for token in tokens:
-		if token not in stopwords:
-			tokens_filterd.append(token)
-
-	print(":::: 대댓글 포함 ::::")
-	print('토큰 갯수:', len(list(set(tokens))))
-	print('불용어 처리 토큰 갯수:', len(list(set(tokens_filterd))))
-	print('\n', list(set(tokens))[:100])
-
-	close_db(client)
 
 # DB에 Token화
 def Tokenizer_DB():
@@ -271,6 +197,7 @@ def Tokenizer_DB():
 			for reply in replies:
 				result = get_korean(reply['content'])
 				result = parse_tags(mecab, result)
+				result = except_token(result)
 
 				tokens = []
 
@@ -282,6 +209,7 @@ def Tokenizer_DB():
 
 			result = get_korean(comment['content'])
 			result = parse_tags(mecab, result)
+			result = except_token(result)
 
 			tokens = []
 
@@ -297,6 +225,7 @@ def Tokenizer_DB():
 			for token in video['tags']:
 				result = get_korean(token)
 				result = parse_tags(mecab, result)
+				result = except_token(result)
 				video_tokens += result
 		else:
 			db.video.update_one(
@@ -325,6 +254,8 @@ def Tokenizer_DB():
 	print("\nVideo의 Tokenizing이 완료되었습니다!\n")
 
 	close_db(client)
+	
+	return True
 
 # Tokenizer_DB()
 

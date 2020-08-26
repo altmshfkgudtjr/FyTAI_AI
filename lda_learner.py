@@ -12,11 +12,11 @@ from datetime import datetime
 
 ''' HyperParameter '''
 WORKERS = 4 			# CPU 갯수
-NUM_TOPICS = 6	 		# 토픽 갯수
-PASSES = 30				# 전체 코퍼스에서 모델을 학습시키는 빈도를 제어
+NUM_TOPICS = 20	 		# 토픽 갯수
+PASSES = 33				# 전체 코퍼스에서 모델을 학습시키는 빈도를 제어
 ITERATION = 100			# 각각 문서에 대해서 루프를 얼마나 돌리는지를 제어
-MIN_COUNT = 20 			# 등장 빈도수 및 길이로 딕셔너리 필터링
-IS_REPLY = True			# 대댓글 포함
+MIN_COUNT = 4 			# 등장 빈도수 및 길이로 딕셔너리 필터링
+IS_REPLY = False		# 대댓글 포함
 ''' ============== '''
 
 MODEL_NAME = "fytai_lda_model"
@@ -120,6 +120,51 @@ def get_data(N=0):
 	
 	return posts
 
+# 토큰 빈도 수
+def check_token_count(is_reply=IS_REPLY):
+	videos = get_data()
+
+	print("Token 빈도 수 Checker 실행 중...")
+
+	tokens = []
+
+	for video in videos:
+		for comment in video['comments']:
+			if is_reply:
+				for reply in comment['replies']:
+					tokens += reply['tokens']
+			tokens += comment['tokens']
+		tokens += video['tokens']
+
+	print("Tokens Count :", len(tokens))
+
+	output = []
+	dup_output = []
+
+	for token in tokens:
+		if token in dup_output:
+			continue
+		cnt = tokens.count(token)
+		output.append({
+			'token': token,
+			'cnt': cnt
+		})
+		dup_output.append(token)
+
+	print("내림차순 정렬 중...")
+
+	# 내림차순
+	output = sorted(output, key=lambda x: x['cnt'])
+	output.reverse()
+
+	print("Done!")
+
+	print(output[:200])
+
+	return output
+
+
+
 # Corpus|Dictionary 생성 함수
 def make_cor_dict(tf_idf=True, is_reply=IS_REPLY):
 	print("Corpus | Dictionary 생성 중...")
@@ -215,6 +260,7 @@ def LDA():
 		corpus, dictionary = make_cor_dict(tf_idf=True)
 		save_dict_corpus(dictionary=dictionary, corpus=corpus)
 
+	return
 	ldamodel, coherence, perflexity =  learn_lda(
 											corpus = corpus, 
 											dictionary = dictionary
