@@ -35,6 +35,21 @@ else:
 	save_model_path = "/home/ubuntu/lda_output/"
 	save_dict_path = "/home/ubuntu/lda_output/"
 
+def load_lda(model_path=save_model_path, version=None):
+	try:	
+		if version == None:
+			lda = gensim.models.ldamodel.LdaModel.load(datapath(model_path + MODEL_NAME))
+		elif os_platform.startswith("Windows"):
+			lda = gensim.models.ldamodel.LdaModel.load(datapath(model_path + version + '\\' + MODEL_NAME))
+		else:
+			lda = gensim.models.ldamodel.LdaModel.load(datapath(model_path + version + '/' + MODEL_NAME))
+		print("\nmodel loaded.\n")
+	except:
+		print("\nmodel is not exist.\n")
+		return None
+
+	return lda
+
 # 모델 불러오기
 def load_model(model_path=save_model_path, dict_path=save_dict_path, version=None):
 	print("model loading...\n")
@@ -122,19 +137,20 @@ def make_cor_dict(tf_idf=True, is_reply=IS_REPLY):
 					corpus += [reply['tokens']]
 			dictionary.add_documents([comment['tokens']])
 			corpus += [comment['tokens']]
-
 		dictionary.add_documents([video['tokens']])
 		corpus += [video['tokens']]
 
 	# 등장 빈도수 및 길이로 딕셔너리 최종 필터링 => 고려해볼 것. 왜냐? 댓글당 Token 개수가 너무 적다.
 	dictionary.filter_extremes(no_below=MIN_COUNT)
 
+	print("Corpus: ", len(corpus))
+
 	# 딕셔너리 기반으로 모든 토큰을 정수로 인코딩
 	corpus = [dictionary.doc2bow(tokens) for tokens in corpus]
 
 	# 코퍼스 TF-IDF 수식 적용
-	print(":::: TF-IDF 적용 중...")
 	if tf_idf:
+		print(":::: TF-IDF 적용 중...")
 		tfidf = TfidfModel(corpus)
 		corpus = tfidf[corpus]
 
@@ -193,7 +209,7 @@ def logging(coherence, perflexity, num_topics=NUM_TOPICS, passes=PASSES, iterati
 # LDA 모델 생성 함수
 def LDA():
 	dictionary, corpus = load_model()
-	
+
 	if dictionary == None or corpus == None:
 		print("Dictionary와 Corpus가 존재하지 않습니다.\n")
 		corpus, dictionary = make_cor_dict(tf_idf=True)
