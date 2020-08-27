@@ -6,7 +6,7 @@
 
 - Tokenizer
 - LDA learner
-
+- Similarity
 
 
 ### 🖨 Tokenizer
@@ -60,4 +60,21 @@
 python -i lda_learner.py
 
 >>> LDA()
+```
+
+
+
+### 🔗Similarity
+
+**Viedo**와 **Comment**간의 유사도 계산기입니다.
+
+> **How to run?**
+```python
+python -i similarity.py
+
+# lda_vector Column 갱신
+>>> update_similarity()
+
+# 영상 댓글 연관도순 정렬(상위20개만 출력)
+>>> video_sim_comment(video_id="abasdfkekd")
 ```
