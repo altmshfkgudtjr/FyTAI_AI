@@ -257,6 +257,27 @@ def Tokenizer_DB():
 	
 	return True
 
+# String to Token
+def str2token(string):
+	# MeCab 모델 선언
+	mecab = MeCab.Tagger()
+
+	# 불용어 파일 읽어오기
+	with open('./tokenizer/korean_stopwords.txt', 'r', encoding='UTF8') as f:
+		stopwords = f.read().split()
+
+	result = get_korean(string)
+	result = parse_tags(mecab, result)
+	result = except_token(result)
+
+	tokens = []
+
+	for token in result:
+		if token not in stopwords:
+			tokens.append(token)
+
+	return tokens
+
 # Tokenizer_DB()
 
 # Tokenizer_1(1500, 1501)
